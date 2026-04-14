@@ -66,6 +66,8 @@ $$ISO_{snapped} = 100 \times 2^{\,\text{round}(\log_2(ISO_{raw}\,/\,100))}$$
 - SW1/SW2 use the ATmega's internal pull-ups in firmware — no external pull resistors required
 - AREF (pin 21) is bypassed to GND with a 100nF cap per datasheet recommendation
 
+![Schematic](docs/schematic.png)
+
 ---
 
 ## PCB Design
