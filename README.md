@@ -18,24 +18,18 @@ Designed from scratch as a complete end-to-end hardware project: custom schemati
 
 ---
 
-## Exposure Math
-
-ISO is calculated from the measured lux value using the standard photographic exposure relationship:
-
-$$ISO = \frac{250 \times N^2}{L \times t}$$
-
-Where:
-- $N$ = aperture (f-number)
-- $L$ = measured illuminance (lux)
-- $t$ = shutter speed (seconds)
-
-The raw ISO result is then snapped to the nearest standard film speed (ISO 100, 200, 400, 800, 1600, 3200) by rounding to the nearest stop:
-
-$$ISO_{snapped} = 100 \times 2^{\,\text{round}(\log_2(ISO_{raw}\,/\,100))}$$
-
----
-
 ## Hardware
+
+### Schematic Design Notes
+
+- The ATmega328P runs at **8MHz** to comply with the 3.3V operating voltage limit (the datasheet maximum clock at 3.3V is ~10MHz; 16MHz requires ≥4.5V)
+- The 27pF crystal load caps are calculated to match the Citizen HC-49-U-S crystal's 18pF load spec: $C_L = C/2 + C_{stray} \approx 13.5 + 4.5 = 18\text{pF}$
+- The MCP1700 requires **1µF on both VIN and VOUT** for LDO loop stability — these are placed adjacent to the regulator on the PCB
+- I2C pull-up resistors R1/R2 (4.7kΩ) are on the SDA and SCL lines for the BH1750 sensor and OLED display
+- SW1/SW2 use the ATmega's internal pull-ups in firmware — no external pull resistors required
+- AREF (pin 21) is bypassed to GND with a 100nF cap per datasheet recommendation
+
+![Schematic](docs/schematic.png)
 
 ### Components
 
@@ -56,17 +50,6 @@ $$ISO_{snapped} = 100 \times 2^{\,\text{round}(\log_2(ISO_{raw}\,/\,100))}$$
 | C3, C4 | 0.1µF | ATmega AVCC/VCC decoupling |
 | C6 | 0.1µF | AREF decoupling cap |
 | C8, C9 | 1µF | MCP1700 VIN/VOUT bypass caps |
-
-### Schematic Design Notes
-
-- The ATmega328P runs at **8MHz** to comply with the 3.3V operating voltage limit (the datasheet maximum clock at 3.3V is ~10MHz; 16MHz requires ≥4.5V)
-- The 27pF crystal load caps are calculated to match the Citizen HC-49-U-S crystal's 18pF load spec: $C_L = C/2 + C_{stray} \approx 13.5 + 4.5 = 18\text{pF}$
-- The MCP1700 requires **1µF on both VIN and VOUT** for LDO loop stability — these are placed adjacent to the regulator on the PCB
-- I2C pull-up resistors R1/R2 (4.7kΩ) are on the SDA and SCL lines for the BH1750 sensor and OLED display
-- SW1/SW2 use the ATmega's internal pull-ups in firmware — no external pull resistors required
-- AREF (pin 21) is bypassed to GND with a 100nF cap per datasheet recommendation
-
-![Schematic](docs/schematic.png)
 
 ---
 
