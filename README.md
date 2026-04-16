@@ -6,6 +6,9 @@ Designed from scratch as a complete end-to-end hardware project: custom schemati
 
 ---
 
+![ProductImage](docs/ProductImage.png)
+
+---
 ## Features
 
 - Measures ambient light in lux using a BH1750 digital sensor (I2C)
