@@ -28,21 +28,20 @@ Prices are unit prices at qty 1 in USD; verify current pricing before ordering.
 > **MCP1700 soldering note:** Use the **TO-92 inline footprint** on the PCB (`Package_TO_SOT_THT:TO-92_Inline` in KiCad). Place the three holes in a straight line at **2.54 mm (0.1") pitch** instead of the standard cramped triangle. Bend the two outer leads of the TO-92 outward to match before inserting. This gives standard 0.1" clearance between adjacent pads, eliminating solder bridging. Do **not** use the standard triangle footprint.  
 > **Note:** MCP1700 datasheet requires ≥1 µF on both VIN and VOUT pins. Any radial aluminum electrolytic rated ≥10 V will work; substitute with any in-stock 1 µF radial if ECE-A1HKA010 is unavailable.
 
-### USB-C Li-Po Charging (PCB)
+### USB-C Li-Po Charging
 
-| Qty | Part Number | Description | Unit Price | DigiKey Link |
-|-----|------------|-------------|-----------|-------------|
-| 1 | MCP73831T-2ACI/OT | Li-Po charger IC, SOT-23-5, 500 mA | $0.76 | [Link](https://www.digikey.com/en/products/detail/microchip-technology/MCP73831T-2ACI-OT/964301) |
-| 1 | USB4085-GF-A | USB Type-C 2.0 through-hole right-angle receptacle | $0.91 | [Link](https://www.digikey.com/en/products/detail/gct/USB4085-GF-A/9859662) |
-| 2 | CF14JT5K10 | 5.1 kΩ 1/4 W resistor (USB-C CC1/CC2 pull-downs) | $0.10 ea | [Link](https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT5K10) |
-| 1 | CF14JT3K90 | 3.9 kΩ 1/4 W resistor (MCP73831 PROG pin, sets 128 mA charge current) | $0.10 | [Link](https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT3K90) |
-| 1 | WP7113ID | Red diffused 5 mm LED, 1.9 V forward voltage (charge indicator) | $0.21 | [Link](https://www.digikey.com/en/products/detail/kingbright/WP7113SRD-D/1747663) |
-| 1 | CF14JT1K00 | 1 kΩ 1/4 W resistor (LED current limiter) | $0.10 | [Link](https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT1K00/1741314) |
-| 1 | ESH475M050AC3AA | 4.7 µF 50 V radial electrolytic (MCP73831 VBAT bypass) | ~$0.20 | [Link](https://www.digikey.com/en/products/detail/kemet/ESH475M050AC3AA) |
-| 1 | B2B-PH-K-S | JST PH 2 mm 2-pin vertical battery header (STAT pin — optional) | $0.11 | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/B2B-PH-K-S/926611) |
+> All Li-Po charger ICs (MCP73831, TP4056, LTC4054, etc.) are SMD-only — no through-hole DIP version exists for any of them. The solution is to use a **TP4056 USB-C module** (see Amazon order below). The module mounts on the PCB via 2.54 mm through-hole pins and contains the charger IC, protection circuit, USB-C connector, and charge/fault indicator LEDs all on its own small PCB. No discrete SMD parts are required.
 
-> **USB4085-GF-A note:** This is a **through-hole right-angle** USB-C connector, NOT SMD mid-mount. It mounts on the PCB edge with pins through the board.  
-> **Charge current:** R_PROG = 1000 V / I_charge → 3.9 kΩ ≈ 256 mA. Replace with 2 kΩ for 500 mA charging on full PCB build.
+**TP4056 module pin connections to main PCB:**
+
+| Module Pin | Connect to |
+|-----------|------------|
+| OUT+ | Power switch input (VSYS+) |
+| OUT− | GND |
+| B+ | Li-Po battery positive |
+| B− | Li-Po battery negative / GND |
+
+> The module's built-in USB-C port accepts the charger cable directly — no separate USB-C connector is needed on the main PCB.
 
 ### Rotary Encoders
 
@@ -79,10 +78,10 @@ Prices are unit prices at qty 1 in USD; verify current pricing before ordering.
 |-----|------------|--------|------|-----------|
 | 1 | BH1750FVI ambient light sensor module | Amazon | [HiLetgo BH1750FVI](https://www.amazon.com/HiLetgo-BH1750FVI-intensity-illumination-arduino/dp/B00M0F29OS) | ~$3–5 |
 | 1 | SSD1306 0.96" OLED display, **black PCB**, 128×64, I2C | Amazon | Search "SSD1306 0.96 OLED black PCB I2C 128x64" | ~$4–6 |
-| 1 | TP4056 USB-C Li-Po charger module with protection circuit | Amazon | Search "TP4056 USB-C lipo charger module with protection" | ~$1–2 |
+| 1 | **TP4056 USB-C Li-Po charger module with protection circuit** | Amazon | Search "TP4056 USB-C lipo charger module with protection" | ~$1–2 |
 | 1 | 3.7 V 500 mAh Li-Po battery, JST PH 2 mm connector | Adafruit | [Adafruit #1578](https://www.adafruit.com/product/1578) | ~$8 |
 
-> **TP4056 note:** The TP4056 breakout is the breadboard/prototype charging solution. The Phase 2 PCB uses the MCP73831T instead. Only buy the TP4056 module if prototyping on breadboard before the PCB is ready.  
+> **TP4056 module:** This is the **primary charging solution** for the PCB build (not just breadboard). It is an all-in-one module — through-hole mountable, includes USB-C input, protection circuit, and red/blue indicator LEDs. Buy the version labelled **"with protection"** (has a DW01A protection IC onboard). Mount on PCB via 4 header pins; wire OUT+/OUT− to the power switch and battery.  
 > **OLED note:** Look specifically for the **black PCB** version — some SSD1306 breakouts have a blue PCB and slightly different pinout labels.
 
 ---
@@ -93,13 +92,12 @@ Prices are unit prices at qty 1 in USD; verify current pricing before ordering.
 |----------|-------|--------------|
 | MCU & Clock | ATMEGA328P-PU, socket, crystal, 27 pF caps | ~$5.00 |
 | Power Regulation | MCP1700, 1 µF caps × 2 | ~$1.50 |
-| USB-C Charging IC | MCP73831T, USB4085, resistors, LED, 4.7 µF cap | ~$4.00 |
 | Rotary Encoders × 2 | PEC11R + 4 debounce caps | ~$6.00 |
-| Passives & Decoupling | 0.1 µF × 7, 4.7 kΩ × 2, 10 kΩ, 1 kΩ | ~$3.00 |
-| Connectors & Switch | ICSP header, pin header, JST, slide switch | ~$3.50 |
-| **DigiKey Subtotal** | | **~$23** |
-| Amazon/Adafruit | BH1750, OLED, Li-Po battery | **~$15–20** |
-| **Total (Phase 2)** | | **~$38–45** |
+| Passives & Decoupling | 0.1 µF × 7, 4.7 kΩ × 2, 10 kΩ | ~$2.50 |
+| Connectors & Switch | ICSP header, pin header, slide switch | ~$2.50 |
+| **DigiKey Subtotal** | | **~$18** |
+| Amazon/Adafruit | BH1750, OLED, TP4056 module, Li-Po battery | **~$16–22** |
+| **Total (Phase 2)** | | **~$34–40** |
 
 > Prices exclude shipping. DigiKey orders over $35 USD typically qualify for free standard shipping.
 
