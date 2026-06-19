@@ -23,10 +23,11 @@ Prices are unit prices at qty 1 in USD; verify current pricing before ordering.
 | Qty | Part Number | Description | Unit Price | DigiKey Link |
 |-----|------------|-------------|-----------|-------------|
 | 1 | MCP1700-3302E/TO | 3.3 V LDO, 250 mA, TO-92 **— use inline PCB footprint** | ~$0.50 | [Link](https://www.digikey.com/en/products/detail/microchip-technology/MCP1700-3302E-TO/652680) |
-| 2 | ECA-1HHG010 | 1 µF 50 V radial electrolytic (VIN + VOUT bypass, C8/C9) | ~$0.30 ea | [Link](https://www.digikey.com/en/products/detail/panasonic-industry/ECA-1HHG010/2344) |
+| 2 | *(any 1 µF radial electrolytic, 10 V+)* | 1 µF radial electrolytic (VIN + VOUT bypass, C8/C9) — search DigiKey for any in-stock Nichicon or Panasonic 1 µF 10 V or 16 V radial | ~$0.15 ea | [DigiKey search](https://www.digikey.com/en/products/filter/aluminum-electrolytic-capacitors/58?s=N4IgjCBcoGwJxVAYygMwIYBsDOBTANCAPZQDaIALGGAEwAsAnFQAwCcAugL4A) |
+... I found this one "https://www.digikey.com/en/products/detail/w%C3%BCrth-elektronik/860020672005/5727088"
 
 > **MCP1700 soldering note:** Use the **TO-92 inline footprint** on the PCB (`Package_TO_SOT_THT:TO-92_Inline` in KiCad). Place the three holes in a straight line at **2.54 mm (0.1") pitch** instead of the standard cramped triangle. Bend the two outer leads of the TO-92 outward to match before inserting. This gives standard 0.1" clearance between adjacent pads, eliminating solder bridging. Do **not** use the standard triangle footprint.  
-> **Note:** MCP1700 datasheet requires ≥1 µF on both VIN and VOUT pins. Any radial aluminum electrolytic rated ≥10 V will work; substitute with any in-stock 1 µF radial if ECA-1HHG010 is unavailable.
+> **Note:** MCP1700 VIN will never exceed ~4.2 V (fully charged Li-Po). Any 1 µF radial aluminum electrolytic rated **≥10 V** works here. Search DigiKey for "1uF 10V radial electrolytic" and pick any in-stock Nichicon or Panasonic unit.
 
 ### USB-C Li-Po Charging
 
@@ -127,6 +128,6 @@ PC6 (RESET)→ 10 kΩ pull-up to VCC; ICSP pin
 
 - **PEC11R-4215F-S0024**: Use DigiKey ID **/4499665**. An older incorrect listing at /4499656 maps to a different encoder variant — double-check the part number before checkout.
 - **ED28DT**: On Shore Technology DIP-28 socket. DigiKey ID /4147600. Confirm "0.3 inch" row spacing (standard for ATmega328P-PU).
-- **ECA-1HHG010**: Panasonic 1 µF 50 V radial electrolytic (active ECA series — replaces obsolete ECE-A1HKA010). If unavailable, any 1 µF radial electrolytic ≥10 V works for MCP1700 VIN/VOUT bypass.
+- **1 µF bypass caps (C8/C9):** No specific part locked in — MCP1700 VIN never exceeds ~4.2 V, so any 1 µF radial electrolytic rated ≥10 V is a valid choice. Pick whatever Nichicon or Panasonic 1 µF 10 V–16 V radial is in stock on DigiKey at time of order.
 - **S2B-PH-K-S(LF)(SN)**: JST PH 2.0 mm right-angle through-hole connector. Mates with the JST-PH plug that ships on most Li-Po cells from Amazon. Confirm the battery's plug polarity (red = +) before connecting.
 - **MCP1700-3302E/TO footprint**: Use `Package_TO_SOT_THT:TO-92_Inline` (KiCad) — 3 holes in a straight line at 2.54 mm pitch. Bend the outer two leads outward before inserting. Avoids solder bridging that occurs with the standard TO-92 triangle footprint.
