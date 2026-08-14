@@ -126,3 +126,10 @@ Lux2ISO/
 - Pocket-sized 3D printed enclosure
 - Low battery indicator
 
+---
+
+## Project Planning Docs
+
+- Phase 2 overview: [docs/phase2/Phase2-Overview.md](docs/phase2/Phase2-Overview.md)
+- Phase 3 co-design goals and plan: [docs/phase3/Phase3-Goals-And-Plan.md](docs/phase3/Phase3-Goals-And-Plan.md)
+
