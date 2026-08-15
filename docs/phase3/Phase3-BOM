@@ -1,0 +1,193 @@
+# Lux2ISO Phase 3 — Complete Bill of Materials
+
+All parts required to build Phase 3 from scratch. Links are verified against live DigiKey and Amazon listings.
+Prices are unit prices at qty 1 in USD; verify current pricing before ordering.
+
+---
+
+## DigiKey Order
+
+> Primary order: all ICs, passives, connectors, encoders, and PCB parts.
+
+### Microcontroller
+
+| Qty | Part Number | Description | Unit Price | DigiKey Link |
+|-----|------------|-------------|-----------|-------------|
+| 1 | ATMEGA328P-PU | ATmega328P-PU, DIP-28, 8-bit MCU | $2.89 | [Link](https://www.digikey.com/en/products/detail/microchip-technology/ATMEGA328P-PU/1914589) |
+
+> **Phase 3 clock note:** External crystal and crystal load capacitors were removed. ATmega328P runs on internal 8 MHz clock with your validated fuse set.
+> **Phase 3 assembly note:** ATmega328P is soldered directly to PCB; DIP socket not used.
+
+### 3.3 V Power Regulation
+
+| Qty | Part Number | Description | Unit Price | DigiKey Link |
+|-----|------------|-------------|-----------|-------------|
+| 1 | MCP1700-3302E/TO | 3.3 V LDO, 250 mA, TO-92 **— use inline PCB footprint** | ~$0.50 | [Link](https://www.digikey.com/en/products/detail/microchip-technology/MCP1700-3302E-TO/652680) |
+| 2 | *(any 1 µF radial electrolytic, 10 V+)* | 1 µF radial electrolytic (VIN + VOUT bypass, C8/C9) — search DigiKey for any in-stock Nichicon or Panasonic 1 µF 10 V or 16 V radial | ~$0.15 ea | [DigiKey search](https://www.digikey.com/en/products/filter/aluminum-electrolytic-capacitors/58?s=N4IgjCBcoGwJxVAYygMwIYBsDOBTANCAPZQDaIALGGAEwAsAnFQAwCcAugL4A) |
+
+> **MCP1700 soldering note:** Use the **TO-92 inline footprint** on the PCB (`Package_TO_SOT_THT:TO-92_Inline` in KiCad). Place the three holes in a straight line at **2.54 mm (0.1") pitch** instead of the standard cramped triangle. Bend the two outer leads of the TO-92 outward to match before inserting. This gives standard 0.1" clearance between adjacent pads, eliminating solder bridging. Do **not** use the standard triangle footprint.  
+> **Note:** MCP1700 VIN will never exceed ~4.2 V (fully charged Li-Po). Any 1 µF radial aluminum electrolytic rated **≥10 V** works here. Search DigiKey for "1uF 10V radial electrolytic" and pick any in-stock Nichicon or Panasonic unit.
+
+> **Note:** for the 1uF radical electrolytic I found this one "https://www.digikey.com/en/products/detail/w%C3%BCrth-elektronik/860020672005/5727088"
+
+### USB-C Li-Po Charging
+
+> All Li-Po charger ICs (MCP73831, TP4056, LTC4054, etc.) are SMD-only — no through-hole DIP version exists for any of them. The solution is to use a **TP4056 USB-C module** (see Amazon order below). The module mounts on the PCB via 2.54 mm through-hole pins and contains the charger IC, protection circuit, USB-C connector, and charge/fault indicator LEDs all on its own small PCB. No discrete SMD parts are required.
+
+**TP4056 module pin connections to main PCB:**
+
+| Module Pin | Connect to |
+|-----------|------------|
+| OUT+ | Power switch input (VSYS+) |
+| OUT− | GND |
+| B+ | Li-Po battery positive |
+| B− | Li-Po battery negative / GND |
+
+> The module's built-in USB-C port accepts the charger cable directly — no separate USB-C connector is needed on the main PCB.
+
+### Rotary Encoder (Single-Dial)
+
+| Qty | Part Number | Description | Unit Price | DigiKey Link |
+|-----|------------|-------------|-----------|-------------|
+| 1 | PEC11R-4215F-S0024 | Bourns 24-detent incremental encoder, integrated push switch, 15 mm shaft | $2.27 ea | [Link](https://www.digikey.com/en/products/detail/bourns-inc/PEC11R-4215F-S0024/4499665) |
+| 4 | FG18X7R1H104KNT00 | 100 nF X7R ceramic cap (2 for encoder A/B debounce, 2 for MCU VCC/AVCC bypass), through-hole radial | ~$0.23 ea | [Link](https://www.digikey.com/en/products/detail/tdk/FG18X7R1H104KNT00/7326567) |
+
+> **GPIO assignments:**
+> - Single encoder: A = PD2, B = PD3, SW = PD4
+> - Firmware behavior: short press switches shutter/aperture edit mode
+
+### I2C Pull-ups & MCU Decoupling
+
+| Qty | Part Number | Description | Unit Price | DigiKey Link |
+|-----|------------|-------------|-----------|-------------|
+| 2 | CF14JT4K70 | 4.7 kΩ 1/4 W resistor (I2C SDA/SCL pull-ups) | $0.10 ea | [Link](https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT4K70/1741428) |
+| 1 | CF14JT10K0 | 10 kΩ 1/4 W resistor (ATmega RESET pull-up) | $0.10 | [Link](https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT10K0/1741265) |
+
+> **Cap reuse note:** MCU 100 nF bypass capacitors are included in the FG18X7R1H104KNT00 quantity already listed in the Rotary Encoder section.
+
+> **Phase 3 cap note:** AREF is intentionally tied to +3.3V for this revision, so the separate AREF bypass capacitor was removed from this BOM.
+
+### Connectors & Headers
+
+| Qty | Part Number | Description | Unit Price | DigiKey Link |
+|-----|------------|-------------|-----------|-------------|
+| 1 | TSW-103-07-G-D | 2×3 2.54 mm ICSP header (Arduino-as-ISP programming) | ~$1.50 | [Link](https://www.digikey.com/en/products/detail/samtec-inc/TSW-103-07-G-D/1101274) |
+| 1 | S2B-PH-K-S(LF)(SN) | JST PH 2.0 mm 2-pin right-angle through-hole connector (Li-Po battery, board side) | ~$0.35 | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/S2B-PH-K-S-LF-SN/926626) |
+| 2 | B4B-XH-A | JST XH 4-position through-hole board header, 2.50 mm pitch | ~$0.30 ea | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/B4B-XH-A/1651047) |
+| 2 | B5B-XH-A | JST XH 5-position through-hole board header, 2.50 mm pitch | ~$0.40 ea | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/B5B-XH-A/1530483) |
+| 4 | B2B-XH-A | JST XH 2-position through-hole board header, 2.50 mm pitch | ~$0.20 ea | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/B2B-XH-A/1651045) |
+| 2 | XHP-4 | JST XH 4-position cable housing (mates with B4B-XH-A) | ~$0.12 ea | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/XHP-4/683353) |
+| 2 | XHP-5 | JST XH 5-position cable housing (mates with B5B-XH-A) | ~$0.14 ea | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/XHP-5/1125486) |
+| 4 | XHP-2 | JST XH 2-position cable housing (mates with B2B-XH-A) | ~$0.09 ea | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/XHP-2/555485) |
+| 40 | SXH-001T-P0.6 | JST XH crimp socket contacts, 22-28 AWG (26 needed + spares) | ~$0.06 ea | [Link](https://www.digikey.com/en/products/detail/jst-sales-america-inc/SXH-001T-P0-6/527371) |
+| 1 | 3132-24-1-0500-002-1-TS | CNC Tech 24 AWG stranded silicone hook-up wire, white, 500 ft spool (JST-XH harness wire) | ~$0.75/ft | [Link](https://www.digikey.com/en/products/detail/cnc-tech/3132-24-1-0500-002-1-TS/5012427) |
+
+> **Phase 3 power control note:** External slide switch removed in favor of encoder-button soft-power latch circuit.
+> **Phase 3 wiring decision:** Use locking JST-XH wire-to-board connectors for module and harness interconnects.
+> **Requested counts applied:** 2x 4-pin, 2x 5-pin, and 4x 2-pin JST-XH board headers.
+> **Harness build note:** Crimp SXH-001T-P0.6 contacts to wires, insert into XHP housings until click-lock, then mate to board headers.
+
+### Display (Selected for Phase 3)
+
+| Qty | Part Number | Description | Unit Price | DigiKey Link |
+|-----|------------|-------------|-----------|-------------|
+| 1 | WEA012832FWPP3N00000 | Winstar OLED, white on black, 0.91", 128x32, I2C, SSD1306 | $5.02 | [Link](https://www.digikey.com/en/products/detail/winstar-display/WEA012832FWPP3N00000/22207838) |
+
+> **Display decision note:** This part is the Phase 3 primary display. It matches the horizontal form factor target and works with the existing SSD1306 I2C firmware path.
+
+---
+
+## Phase 3 Add-On: Soft Power Off Latch Hardware (Encoder Long-Press Shutdown)
+
+Use this section when replacing the external slide switch with the encoder push + firmware-controlled soft power latch.
+
+### Core parts (required)
+
+| Qty | Part Number | Description | Unit Price | DigiKey Link |
+|-----|------------|-------------|-----------|-------------|
+| 1 | BS250P | P-channel MOSFET, TO-92 through-hole, high-side load switch element | ~$0.50 | [Link](https://www.digikey.com/en/products/detail/diodes-incorporated/BS250P/92630) |
+| 1 | 2N3904 | NPN transistor (latch control / gate pull-down driver) | ~$0.10 | [Link](https://www.digikey.com/en/products/detail/diotec-semiconductor/2N3904/13164701) |
+| 1 | CF14JT100K | 100 kOhm 1/4W resistor (PMOS gate pull-up to source, default OFF) | ~$0.10 | [Link](https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT100K/1741263) |
+| 1 | CF14JT1K00 | 1 kOhm 1/4W resistor (MCU HOLD or base-drive series resistor) | ~$0.10 | [Link](https://www.digikey.com/en/products/detail/stackpole-electronics-inc/CF14JT1K00/1741314) |
+| 1 | 1N4148 | Small signal diode, DO-35 (optional but recommended for steering/OR paths in latch variants) | ~$0.10 | [Link](https://www.digikey.com/en/products/detail/onsemi/1N4148/458603) |
+
+### Reused existing BOM parts in the latch block
+
+- Reuse existing 100 nF ceramic part K104K15X7RF5TL2 for optional RC timing/debounce node(s).
+- Reuse existing CF14JT10K0 where a 10 kOhm bias resistor is needed by your chosen latch topology.
+
+### Wiring intent summary for this BOM section
+
+- SYS_IN (from charger OUT+) -> PMOS source.
+- VSYS (switched rail) -> PMOS drain -> regulator VIN.
+- PMOS gate pulled high to source by 100 kOhm (default OFF).
+- NPN transistor pulls PMOS gate low to turn ON when button pulse or MCU HOLD requests ON.
+- Encoder push is dual use: short press for UI mode change, long press firmware shutdown, then MCU drops HOLD.
+
+### Build note
+
+BS250P is through-hole and aligns with your all-through-hole assembly preference.
+
+---
+
+## Amazon Order
+
+| Qty | Description | Source | Link | Est. Price |
+|-----|------------|--------|------|-----------|
+| 1 | BH1750FVI ambient light sensor module | Amazon | [HiLetgo BH1750FVI](https://www.amazon.com/HiLetgo-BH1750FVI-intensity-illumination-arduino/dp/B00M0F29OS) | ~$3–5 |
+| 1 | **TP4056 USB-C Li-Po charger module with protection circuit** | Amazon | Search "TP4056 USB-C lipo charger module with protection" | ~$1–2 |
+| 1 | 3.7 V 500 mAh Li-Po battery, JST PH 2 mm connector | Amazon | Search "3.7V 500mAh lipo battery JST PH 2mm" | ~$7–10 |
+
+> **TP4056 module:** This is the **primary charging solution** for the PCB build (not just breadboard). It is an all-in-one module — through-hole mountable, includes USB-C input, protection circuit, and red/blue indicator LEDs. Buy the version labelled **"with protection"** (has a DW01A protection IC onboard). Mount on PCB via 4 header pins; wire OUT+/OUT− to the power switch and battery. The module's B+/B− pads connect to the JST-PH connector (S2B-PH-K-S in DigiKey order) so the battery unplugs cleanly.  
+> **Battery:** Most 3.7V 500mAh Li-Po cells on Amazon ship with a JST-PH 2.0mm plug already attached — confirm before ordering.  
+
+---
+
+## Summary: DigiKey Cart Totals
+
+| Category | Parts | Est. Subtotal |
+|----------|-------|--------------|
+| MCU | ATMEGA328P-PU (direct-solder) | ~$2.89 |
+| Power Regulation | MCP1700, 1 µF caps × 2 | ~$1.50 |
+| Rotary Encoder × 1 | PEC11R + FG18X7R1H104KNT00 × 4 | ~$3.19 |
+| Passives & Decoupling | 4.7 kΩ × 2, 10 kΩ | ~$0.30 |
+| Connectors & Headers | ICSP header, JST battery connector, JST-XH headers/housings/contacts | ~$6.90–8.90 |
+| Display | Winstar WEA012832FWPP3N00000 (128x32 I2C OLED) | ~$5.02 |
+| Soft Power Latch Add-On | BS250P, 2N3904, 100k, 1k, 1N4148 | ~$0.90 |
+| **DigiKey Subtotal (Phase 3 target)** | | **~$20.70–22.70** |
+| Amazon | BH1750, TP4056 module, Li-Po battery | **~$11–17** |
+| **Total (Phase 3 target)** | | **~$31.70–39.70** |
+
+> Prices exclude shipping. DigiKey orders over $35 USD typically qualify for free standard shipping.
+> Wire note: the 500 ft spool of `3132-24-1-0500-002-1-TS` is listed in the BOM but not included in the summary subtotal above (pricing is sold by length/spool and can vary).
+
+---
+
+## GPIO Pin Reference
+
+```
+ATmega328P-PU Phase 3 Pin Assignments
+──────────────────────────────────────
+PC4 (SDA)  → I2C — BH1750 & SSD1306
+PC5 (SCL)  → I2C — BH1750 & SSD1306
+PD2 (INT0) → Encoder Phase A
+PD3 (INT1) → Encoder Phase B
+PD4        → Encoder Switch (mode toggle + soft-power long-press)
+PD5        → PWR_HOLD output (soft-power latch hold)
+PC6 (RESET)→ 10 kΩ pull-up to VCC; ICSP pin
+```
+
+---
+
+## Verified Part Notes
+
+- **PEC11R-4215F-S0024**: Use DigiKey ID **/4499665**. An older incorrect listing at /4499656 maps to a different encoder variant — double-check the part number before checkout.
+- **1 µF bypass caps (C8/C9):** No specific part locked in — MCP1700 VIN never exceeds ~4.2 V, so any 1 µF radial electrolytic rated ≥10 V is a valid choice. Pick whatever Nichicon or Panasonic 1 µF 10 V–16 V radial is in stock on DigiKey at time of order.
+- **S2B-PH-K-S(LF)(SN)**: JST PH 2.0 mm right-angle through-hole connector. Mates with the JST-PH plug that ships on most Li-Po cells from Amazon. Confirm the battery's plug polarity (red = +) before connecting.
+- **100 nF cap cost-down:** Swapped to TDK `FG18X7R1H104KNT00` (0.1 µF, 50 V, X7R, through-hole radial), which is lower cost than the previous Vishay selection at qty 1.
+- **JST-XH interconnect set:** Board side uses B2B/B4B/B5B XH headers; cable side uses XHP housings with SXH-001T-P0.6 contacts.
+- **Quantity check:** This BOM now explicitly supports 2x 4-pin, 2x 5-pin, and 4x 2-pin JST-XH board connectors plus matching cable housings.
+- **Harness wire selection:** `3132-24-1-0500-002-1-TS` is the selected JST-XH harness wire (24 AWG stranded silicone), compatible with SXH-001T-P0.6 contacts.
+- **MCP1700-3302E/TO footprint**: Use `Package_TO_SOT_THT:TO-92_Inline` (KiCad) — 3 holes in a straight line at 2.54 mm pitch. Bend the outer two leads outward before inserting. Avoids solder bridging that occurs with the standard TO-92 triangle footprint.
+- **Clocking change:** External crystal and 27 pF load capacitors removed for Phase 3. Use internal 8 MHz fuse set.
+- **Input change:** Phase 3 uses a single encoder and soft-power latch; second encoder parts removed.
