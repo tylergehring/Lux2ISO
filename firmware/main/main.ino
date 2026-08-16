@@ -7,29 +7,31 @@
 #define SCREEN_HEIGHT 32
 #define OLED_RESET    -1
 
-// Encoder 1 — Shutter Speed (A=PD2/INT0, B=PD3/INT1, SW=PD4)
-#define ENC1_A   2
-#define ENC1_B   3
-#define ENC1_SW  4
+// ── Pin assignments ────────────────────────────────────────────────────────────
+#define ENC1_A    2   // PD2 INT0
+#define ENC1_B    3   // PD3 INT1
+#define ENC1_SW   4   // PD4 — shared: UI mode toggle (short) + shutdown (long)
+#define PWR_HOLD  5   // PD5 — hold latch ON; drive LOW to cut system power
 
-// Encoder 2 — Aperture (A=PD5, B=PD6, SW=PD7)
-#define ENC2_A   5
-#define ENC2_B   6
-#define ENC2_SW  7
+// ── Timing ────────────────────────────────────────────────────────────────────
+#define DEBOUNCE_MS      50
+#define LONG_PRESS_MS  5000   // hold duration before shutdown
+#define DISPLAY_MS       80   // display refresh interval
 
-#define DEBOUNCE_MS  50
-#define DISPLAY_MS   80   // display refresh interval
+// ── Edit mode: single encoder toggles between shutter and aperture ─────────────
+enum EditMode { EDIT_SHUTTER, EDIT_APERTURE };
+EditMode editMode = EDIT_SHUTTER;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 BH1750 lightMeter;
 
-// ── Aperture table ────────────────────────────────────────────────────────────
+// ── Aperture table ─────────────────────────────────────────────────────────────
 const float APERTURES[]    = { 1.0, 1.4, 2.0, 2.8, 4.0, 5.6, 8.0, 11.0, 16.0, 22.0 };
 const char* APERTURE_STR[] = { "f/1", "f/1.4", "f/2", "f/2.8", "f/4",
                                 "f/5.6", "f/8", "f/11", "f/16", "f/22" };
 const uint8_t APERTURE_COUNT = sizeof(APERTURES) / sizeof(APERTURES[0]);
 
-// ── Shutter speed table ───────────────────────────────────────────────────────
+// ── Shutter speed table ────────────────────────────────────────────────────────
 const float SHUTTERS[]    = { 1.0, 0.5, 0.25, 0.125, 1.0/15, 1.0/30,
                                1.0/60, 1.0/125, 1.0/250, 1.0/500, 1.0/1000 };
 const char* SHUTTER_STR[] = { "1s", "1/2", "1/4", "1/8", "1/15", "1/30",
@@ -39,16 +41,12 @@ const uint8_t SHUTTER_COUNT = sizeof(SHUTTERS) / sizeof(SHUTTERS[0]);
 // ── State ─────────────────────────────────────────────────────────────────────
 uint8_t apertureIdx = 6;   // default f/8
 uint8_t shutterIdx  = 7;   // default 1/125s
+uint8_t enc1State   = 0;
 
-// Encoder quadrature last-state (bits: [1]=A [0]=B)
-uint8_t enc1State = 0;
-uint8_t enc2State = 0;
-
-// Encoder switch debounce
-bool     lastEnc1Sw  = HIGH;
-bool     lastEnc2Sw  = HIGH;
-uint32_t lastEnc1SwMs = 0;
-uint32_t lastEnc2SwMs = 0;
+// ── Button state machine ───────────────────────────────────────────────────────
+enum ButtonState { BTN_IDLE, BTN_PRESSED, BTN_HELD };
+ButtonState btnState   = BTN_IDLE;
+uint32_t    btnPressMs = 0;
 
 // Quadrature lookup: +1=CW, -1=CCW, 0=no valid step
 // Indexed by (lastAB << 2 | currAB)
@@ -59,23 +57,13 @@ static const int8_t ENC_TABLE[16] = {
     0, -1,  1,  0
 };
 
-// ── ISO snapping ──────────────────────────────────────────────────────────────
+// ── ISO snapping (whole-stop increments from ISO 100) ─────────────────────────
 int snapISO(float iso_raw) {
     float stops = log(iso_raw / 100.0) / log(2.0);
     stops = round(stops);
     if (stops < 0) stops = 0;
     if (stops > 5) stops = 5;
     return (int)round(100.0 * pow(2.0, stops));
-}
-
-// ── Scene label ───────────────────────────────────────────────────────────────
-const char* sceneLabel(float lux) {
-    if (lux >= 10000) return "Direct Sunlight";
-    if (lux >= 1000)  return "Bright Outdoors";
-    if (lux >= 200)   return "Overcast / Shade";
-    if (lux >= 50)    return "Indoor Bright";
-    if (lux >= 10)    return "Indoor Dim";
-    return "Low Light / Night";
 }
 
 // ── Quadrature read — returns +1, -1, or 0 ───────────────────────────────────
@@ -86,114 +74,140 @@ int8_t readEncoder(uint8_t pinA, uint8_t pinB, uint8_t &lastState) {
     return delta;
 }
 
-// ── Debounced button — true on falling edge ───────────────────────────────────
-bool buttonPressed(uint8_t pin, bool &lastState, uint32_t &lastMs) {
-    bool current = digitalRead(pin);
-    if (current == LOW && lastState == HIGH) {
-        uint32_t now = millis();
-        if (now - lastMs >= DEBOUNCE_MS) {
-            lastMs    = now;
-            lastState = current;
-            return true;
-        }
-    }
-    lastState = current;
-    return false;
+// ── Shutdown — quiesce peripherals then release latch ─────────────────────────
+void shutdownSystem() {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(22, 12);
+    display.print("Powering off...");
+    display.display();
+    delay(800);
+
+    // Release latch — VSYS drops to 0 V; MCU loses power within a few ms
+    digitalWrite(PWR_HOLD, LOW);
+    while (true);   // wait for rail to collapse; never returns
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 void setup() {
-    Serial.begin(9600);
-    Wire.begin();
+    // Assert PWR_HOLD before anything else so startup pulse can be released
+    pinMode(PWR_HOLD, OUTPUT);
+    digitalWrite(PWR_HOLD, HIGH);
 
     pinMode(ENC1_A,  INPUT_PULLUP);
     pinMode(ENC1_B,  INPUT_PULLUP);
     pinMode(ENC1_SW, INPUT_PULLUP);
-    pinMode(ENC2_A,  INPUT_PULLUP);
-    pinMode(ENC2_B,  INPUT_PULLUP);
-    pinMode(ENC2_SW, INPUT_PULLUP);
 
-    // Seed encoder state from current pin levels
     enc1State = (digitalRead(ENC1_A) << 1) | digitalRead(ENC1_B);
-    enc2State = (digitalRead(ENC2_A) << 1) | digitalRead(ENC2_B);
+
+    Serial.begin(9600);
+    Wire.begin();
 
     uint8_t oledAddr = 0x3C;
     bool oledOk = display.begin(SSD1306_SWITCHCAPVCC, oledAddr);
     if (!oledOk) {
         oledAddr = 0x3D;
-        oledOk = display.begin(SSD1306_SWITCHCAPVCC, oledAddr);
+        oledOk   = display.begin(SSD1306_SWITCHCAPVCC, oledAddr);
     }
     if (!oledOk) {
-        Serial.println("SSD1306 not found at 0x3C or 0x3D. Check wiring");
+        Serial.println("SSD1306 not found at 0x3C or 0x3D");
         while (true);
     }
-    Serial.print("SSD1306 found at 0x");
-    Serial.println(oledAddr, HEX);
+    Serial.print("SSD1306 @ 0x"); Serial.println(oledAddr, HEX);
 
     if (lightMeter.begin()) {
-        Serial.println("BH1750 found and ready.");
+        Serial.println("BH1750 ready");
     } else {
-        Serial.println("BH1750 not found. Check wiring");
+        Serial.println("BH1750 not found — check wiring");
     }
 
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
-    display.println("Lux2ISO ready!");
+    display.println("Lux2ISO P3");
+    display.setCursor(0, 12);
+    display.println("Hold 5s to off");
     display.display();
     delay(1000);
 }
 
 // ── Loop ──────────────────────────────────────────────────────────────────────
 void loop() {
-    // Poll encoders every iteration so no detent is missed
+    uint32_t now = millis();
+
+    // Encoder rotation — adjusts whichever parameter is active
     int8_t enc1Delta = readEncoder(ENC1_A, ENC1_B, enc1State);
-    int8_t enc2Delta = readEncoder(ENC2_A, ENC2_B, enc2State);
+    if (editMode == EDIT_SHUTTER) {
+        if (enc1Delta > 0 && shutterIdx  < SHUTTER_COUNT  - 1) shutterIdx++;
+        if (enc1Delta < 0 && shutterIdx  > 0)                  shutterIdx--;
+    } else {
+        if (enc1Delta > 0 && apertureIdx < APERTURE_COUNT - 1) apertureIdx++;
+        if (enc1Delta < 0 && apertureIdx > 0)                  apertureIdx--;
+    }
 
-    // Encoder 1 — Shutter Speed (CW = faster, CCW = slower)
-    if (enc1Delta > 0 && shutterIdx  < SHUTTER_COUNT  - 1) shutterIdx++;
-    if (enc1Delta < 0 && shutterIdx  > 0)                  shutterIdx--;
+    // Button state machine: short press = mode toggle, long press = shutdown
+    bool btnDown = (digitalRead(ENC1_SW) == LOW);
 
-    // Encoder 2 — Aperture (CW = higher f-number, CCW = lower)
-    if (enc2Delta > 0 && apertureIdx < APERTURE_COUNT - 1) apertureIdx++;
-    if (enc2Delta < 0 && apertureIdx > 0)                  apertureIdx--;
+    switch (btnState) {
+        case BTN_IDLE:
+            if (btnDown) {
+                btnState   = BTN_PRESSED;
+                btnPressMs = now;
+            }
+            break;
 
-    // Encoder switches — press to reset that value to default
-    if (buttonPressed(ENC1_SW, lastEnc1Sw, lastEnc1SwMs)) shutterIdx  = 7; // 1/125s
-    if (buttonPressed(ENC2_SW, lastEnc2Sw, lastEnc2SwMs)) apertureIdx = 6; // f/8
+        case BTN_PRESSED:
+            if (now - btnPressMs >= LONG_PRESS_MS) {
+                btnState = BTN_HELD;
+                shutdownSystem();  // does not return
+            } else if (!btnDown) {
+                // Released before long-press threshold — treat as mode toggle
+                if (now - btnPressMs >= DEBOUNCE_MS) {
+                    editMode = (editMode == EDIT_SHUTTER) ? EDIT_APERTURE : EDIT_SHUTTER;
+                }
+                btnState = BTN_IDLE;
+            }
+            break;
 
-    // Refresh display and serial at a fixed interval; BH1750 updates ~every 120ms
+        case BTN_HELD:
+            // shutdownSystem() loops forever; this branch is unreachable
+            btnState = BTN_IDLE;
+            break;
+    }
+
+    // Refresh display at fixed interval
     static uint32_t lastDisplay = 0;
-    if (millis() - lastDisplay < DISPLAY_MS) return;
-    lastDisplay = millis();
+    if (now - lastDisplay < DISPLAY_MS) return;
+    lastDisplay = now;
 
     float lux      = lightMeter.readLightLevel();
     float aperture = APERTURES[apertureIdx];
     float shutter  = SHUTTERS[shutterIdx];
 
-    Serial.print("Lux: ");
-    Serial.print(lux, 1);
-    Serial.print("  Aperture: ");
-    Serial.print(APERTURE_STR[apertureIdx]);
-    Serial.print("  Shutter: ");
-    Serial.println(SHUTTER_STR[shutterIdx]);
+    Serial.print("Lux: ");    Serial.print(lux, 1);
+    Serial.print("  Ap: ");   Serial.print(APERTURE_STR[apertureIdx]);
+    Serial.print("  Sh: ");   Serial.print(SHUTTER_STR[shutterIdx]);
+    Serial.print("  Mode: "); Serial.println(editMode == EDIT_SHUTTER ? "SH" : "AP");
 
     display.clearDisplay();
 
-    // Row 0 — lux reading (large)
+    // Row 0 — lux reading (large text)
     display.setTextSize(2);
     display.setCursor(0, 0);
     display.print(lux, 1);
     display.println(" lx");
 
-    // Row 1 — compact settings + ISO for 128x32
+    // Row 1 — active parameter (>) + other parameter + ISO
     display.setTextSize(1);
     display.setCursor(0, 20);
-    display.print("Ap: ");
-    display.print(APERTURE_STR[apertureIdx]);
-    display.print(" Sh:");
+    display.print(editMode == EDIT_SHUTTER ? ">" : " ");
+    display.print("Sh:");
     display.print(SHUTTER_STR[shutterIdx]);
+    display.print(" ");
+    display.print(editMode == EDIT_APERTURE ? ">" : " ");
+    display.print(APERTURE_STR[apertureIdx]);
     display.print(" I:");
     if (lux <= 0.0) {
         display.print("--");
