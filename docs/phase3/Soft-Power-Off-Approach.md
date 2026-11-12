@@ -1,5 +1,7 @@
 # Lux2ISO Phase 3 - Soft Power Off Using Encoder Push Button
 
+> **Superseded design - not used in the current build.** Phase 3 now uses the EG1218 mechanical switch, Adafruit 4410 USB-C charger, and Adafruit 1578 protected battery. Follow the [wiring manual](Phase3-Wiring-Manual.md) and [current BOM](Phase3-BOM). The material below is historical and must not be combined with the new wiring.
+
 ## Goal
 
 Replace the external latching power switch with an encoder-button-driven soft power system:

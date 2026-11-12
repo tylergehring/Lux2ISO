@@ -60,7 +60,8 @@ If any two of these fail, do not scale. Run corrective actions and re-pilot.
 3. OLED bring-up and full UI traversal
 4. Encoder input verification (A/B/SW)
 5. Sensor sanity check against reference lighting scene
-6. Soft-power long-press shutdown and restart behavior
+6. Mechanical switch OFF/ON behavior and single-encoder mode selection
+7. USB-C-to-C and USB-A-to-C charging at the selected 100 mA setting, with the meter OFF; use the [current wiring manual](Phase3-Wiring-Manual.md)
 
 ### Exit Gate
 

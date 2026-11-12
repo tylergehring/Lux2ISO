@@ -1,5 +1,9 @@
 # Lux2ISO Phase 3 - Co-Design Plan (PCB + Housing)
 
+## Current electrical build
+
+The [from-scratch wiring manual](Phase3-Wiring-Manual.md) and [Phase 3 BOM](Phase3-BOM) define the current revision: EG1218 mechanical power switch, one encoder, Adafruit 4410 USB-C charging at 100 mA, and an Adafruit 1578 protected battery. The meter is switched OFF for charging. The previous soft-power latch is superseded; firmware still needs the compatibility changes listed in the manual.
+
 ## Phase 3 Objective
 
 Design the next Lux2ISO hardware revision so the PCB, display, controls, battery, and housing are engineered as one system.
@@ -117,11 +121,11 @@ Acceptance criteria:
 
 ---
 
-### G7. Evaluate single-dial interaction (if encoder has push switch)
+### G7. Validate the selected single-dial interaction
 
 What to do:
-- Keep one encoder with push for mode switching (aperture edit, shutter edit, menu).
-- Define fallback to dual-encoder if single-dial usability is poor.
+- Keep one encoder with short-press selection of aperture or shutter editing.
+- Use the separate EG1218 slide switch for power; encoder presses do not control power.
 
 Why:
 - Can reduce panel complexity and save space.
@@ -179,12 +183,14 @@ Acceptance criteria:
 
 What to do:
 - Confirm battery polarity protection strategy.
-- Verify charger module placement, thermal room, and wiring labels (B+/B-, OUT+/OUT-).
+- Verify Adafruit 4410 charger placement, thermal room, and VBAT/GND harness labels.
+- Keep the Adafruit 1578 battery's protection and factory connector intact; use the charger's default 100 mA setting.
+- Validate ordinary USB-C-to-C and USB-A-to-C charging with the meter switched OFF.
 - Confirm decoupling near MCU VCC/AVCC/AREF.
 
 Acceptance criteria:
 - No unsafe heating in normal charge/use conditions.
-- Stable runtime under battery and USB-powered states.
+- Stable battery-powered runtime and correct charging with the system switched OFF; simultaneous use and charging is not supported.
 
 ### G12. Design-for-assembly and service
 
